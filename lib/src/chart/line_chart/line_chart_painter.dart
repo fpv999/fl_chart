@@ -25,6 +25,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData>
       _extraLinesPaint,
       _touchLinePaint,
       _bgTouchTooltipPaint,
+      _bgTouchTooltipFramePaint,
       _imagePaint;
 
   /// Paints [data] into canvas, it is the animating [LineChartData],
@@ -64,6 +65,10 @@ class LineChartPainter extends AxisChartPainter<LineChartData>
     _bgTouchTooltipPaint = Paint()
       ..style = PaintingStyle.fill
       ..color = Colors.white;
+
+    _bgTouchTooltipFramePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..color = Colors.grey.shade300;
 
     _imagePaint = Paint();
   }
@@ -1240,7 +1245,31 @@ class LineChartPainter extends AxisChartPainter<LineChartData>
     final RRect roundedRect = RRect.fromRectAndCorners(rect,
         topLeft: radius, topRight: radius, bottomLeft: radius, bottomRight: radius);
     _bgTouchTooltipPaint.color = tooltipData.tooltipBgColor;
+
+    final Path path = Path();
+    // here are my custom shapes
+    /*path.moveTo(rect.left-3, rect.top-7);
+    path.lineTo(rect.right+3, rect.top-7);
+    path.lineTo(rect.right+3, rect.bottom);
+    path.lineTo(rect.left-3, rect.bottom);*/
+    path.moveTo(rect.left, rect.top-7);
+    path.lineTo(rect.right, rect.top-7);
+    path.lineTo(rect.right+3, rect.top-4);
+    path.lineTo(rect.right+3, rect.bottom-3);
+    path.lineTo(rect.right, rect.bottom);
+    path.lineTo(rect.left, rect.bottom);
+    path.lineTo(rect.left-3, rect.bottom-3);
+    path.lineTo(rect.left-3, rect.top);
+    path.close();
+
+    canvas.drawShadow(path, Colors.black38, 3.0, true);
+
     canvas.drawRRect(roundedRect, _bgTouchTooltipPaint);
+    canvas.drawRRect(roundedRect, _bgTouchTooltipFramePaint);
+
+
+
+    //canvas.drawRRect(roundedRect, _bgTouchTooltipFramePaint);
 
     /// draw the texts one by one in below of each other
     double topPosSeek = tooltipData.tooltipPadding.top;
