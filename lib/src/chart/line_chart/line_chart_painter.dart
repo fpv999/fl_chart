@@ -1279,14 +1279,14 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         path.lineTo(rect.right+3, rect.top-7);
         path.lineTo(rect.right+3, rect.bottom);
         path.lineTo(rect.left-3, rect.bottom);*/
-        path.moveTo(rect.left, rect.top-7);
-        path.lineTo(rect.right, rect.top-7);
-        path.lineTo(rect.right+3, rect.top-4);
-        path.lineTo(rect.right+3, rect.bottom-3);
-         path.lineTo(rect.right, rect.bottom);
+        path.moveTo(rect.left, rect.top - 7);
+        path.lineTo(rect.right, rect.top - 7);
+        path.lineTo(rect.right + 3, rect.top - 4);
+        path.lineTo(rect.right + 3, rect.bottom - 3);
+        path.lineTo(rect.right, rect.bottom);
         path.lineTo(rect.left, rect.bottom);
-        path.lineTo(rect.left-3, rect.bottom-3);
-        path.lineTo(rect.left-3, rect.top);
+        path.lineTo(rect.left - 3, rect.bottom - 3);
+        path.lineTo(rect.left - 3, rect.top);
         path.close();
 
         canvasWrapper.drawShadow(path, Colors.black38, 3.0, true);
@@ -1295,8 +1295,6 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         canvasWrapper.drawRRect(roundedRect, _bgTouchTooltipFramePaint);
       },
     );
-
-
 
     /// draw the texts one by one in below of each other
     var topPosSeek = tooltipData.tooltipPadding.top;
