@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'package:flutter/gestures.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +22,7 @@ class BarChartSample1State extends State<BarChartSample1> {
   final Color barBackgroundColor = const Color(0xff72d8bf);
   final Duration animDuration = const Duration(milliseconds: 250);
 
-  int touchedIndex;
+  int touchedIndex = -1;
 
   bool isPlaying = false;
 
@@ -142,7 +142,7 @@ class BarChartSample1State extends State<BarChartSample1> {
           case 6:
             return makeGroupData(6, 6.5, isTouched: i == touchedIndex);
           default:
-            return null;
+            return throw Error();
         }
       });
 
@@ -175,16 +175,34 @@ class BarChartSample1State extends State<BarChartSample1> {
                 case 6:
                   weekDay = 'Sunday';
                   break;
+                default:
+                  throw Error();
               }
               return BarTooltipItem(
-                  weekDay + '\n' + (rod.y - 1).toString(), TextStyle(color: Colors.yellow));
+                weekDay + '\n',
+                TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: (rod.y - 1).toString(),
+                    style: TextStyle(
+                      color: Colors.yellow,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              );
             }),
         touchCallback: (barTouchResponse) {
           setState(() {
             if (barTouchResponse.spot != null &&
-                barTouchResponse.touchInput is! FlPanEnd &&
-                barTouchResponse.touchInput is! FlLongPressEnd) {
-              touchedIndex = barTouchResponse.spot.touchedBarGroupIndex;
+                barTouchResponse.touchInput is! PointerUpEvent &&
+                barTouchResponse.touchInput is! PointerExitEvent) {
+              touchedIndex = barTouchResponse.spot!.touchedBarGroupIndex;
             } else {
               touchedIndex = -1;
             }
@@ -294,7 +312,7 @@ class BarChartSample1State extends State<BarChartSample1> {
             return makeGroupData(6, Random().nextInt(15).toDouble() + 6,
                 barColor: widget.availableColors[Random().nextInt(widget.availableColors.length)]);
           default:
-            return null;
+            return throw Error();
         }
       }),
     );
@@ -304,7 +322,7 @@ class BarChartSample1State extends State<BarChartSample1> {
     setState(() {});
     await Future<dynamic>.delayed(animDuration + const Duration(milliseconds: 50));
     if (isPlaying) {
-      refreshState();
+      await refreshState();
     }
   }
 }

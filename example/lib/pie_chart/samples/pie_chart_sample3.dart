@@ -1,7 +1,8 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/gestures.dart';
 
 /// Icons by svgrepo.com (https://www.svgrepo.com/collection/job-and-professions-3/)
 class PieChartSample3 extends StatefulWidget {
@@ -10,7 +11,7 @@ class PieChartSample3 extends StatefulWidget {
 }
 
 class PieChartSample3State extends State {
-  int touchedIndex;
+  int touchedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +25,12 @@ class PieChartSample3State extends State {
             PieChartData(
                 pieTouchData: PieTouchData(touchCallback: (pieTouchResponse) {
                   setState(() {
-                    if (pieTouchResponse.touchInput is FlLongPressEnd ||
-                        pieTouchResponse.touchInput is FlPanEnd) {
-                      touchedIndex = -1;
+                    final desiredTouch = pieTouchResponse.touchInput is! PointerExitEvent &&
+                        pieTouchResponse.touchInput is! PointerUpEvent;
+                    if (desiredTouch && pieTouchResponse.touchedSection != null) {
+                      touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
                     } else {
-                      touchedIndex = pieTouchResponse.touchedSectionIndex;
+                      touchedIndex = -1;
                     }
                   });
                 }),
@@ -47,9 +49,9 @@ class PieChartSample3State extends State {
   List<PieChartSectionData> showingSections() {
     return List.generate(4, (i) {
       final isTouched = i == touchedIndex;
-      final double fontSize = isTouched ? 20 : 16;
-      final double radius = isTouched ? 110 : 100;
-      final double widgetSize = isTouched ? 55 : 40;
+      final fontSize = isTouched ? 20.0 : 16.0;
+      final radius = isTouched ? 110.0 : 100.0;
+      final widgetSize = isTouched ? 55.0 : 40.0;
 
       switch (i) {
         case 0:
@@ -113,7 +115,7 @@ class PieChartSample3State extends State {
             badgePositionPercentageOffset: .98,
           );
         default:
-          return null;
+          throw 'Oh no';
       }
     });
   }
@@ -126,9 +128,9 @@ class _Badge extends StatelessWidget {
 
   const _Badge(
     this.svgAsset, {
-    Key key,
-    @required this.size,
-    @required this.borderColor,
+    Key? key,
+    required this.size,
+    required this.borderColor,
   }) : super(key: key);
 
   @override

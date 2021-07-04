@@ -3,7 +3,6 @@ import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 import 'base_chart_painter.dart';
-import 'touch_input.dart';
 
 /// This class holds all data needed for [BaseChartPainter].
 ///
@@ -19,8 +18,8 @@ abstract class BaseChartData with EquatableMixin {
   /// It draws 4 borders around your chart, you can customize it using [borderData],
   /// [touchData] defines the touch behavior and responses.
   BaseChartData({
-    FlBorderData borderData,
-    FlTouchData touchData,
+    FlBorderData? borderData,
+    required FlTouchData touchData,
   })  : borderData = borderData ?? FlBorderData(),
         touchData = touchData;
 
@@ -28,7 +27,7 @@ abstract class BaseChartData with EquatableMixin {
 
   /// Used for equality check, see [EquatableMixin].
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         borderData,
         touchData,
       ];
@@ -42,8 +41,8 @@ class FlBorderData with EquatableMixin {
   /// [show] Determines showing or hiding border around the chart.
   /// [border] Determines the visual look of 4 borders, see [Border].
   FlBorderData({
-    bool show,
-    Border border,
+    bool? show,
+    Border? border,
   })  : show = show ?? true,
         border = border ??
             Border.all(
@@ -54,7 +53,6 @@ class FlBorderData with EquatableMixin {
 
   /// Lerps a [FlBorderData] based on [t] value, check [Tween.lerp].
   static FlBorderData lerp(FlBorderData a, FlBorderData b, double t) {
-    assert(a != null && b != null && t != null);
     return FlBorderData(
       show: b.show,
       border: Border.lerp(a.border, b.border, t),
@@ -63,7 +61,7 @@ class FlBorderData with EquatableMixin {
 
   /// Used for equality check, see [EquatableMixin].
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         show,
         border,
       ];
@@ -72,8 +70,8 @@ class FlBorderData with EquatableMixin {
 /// Holds data to handle touch events, and touch responses in abstract way.
 ///
 /// There is a touch flow, explained [here](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/handle_touches.md)
-/// in a simple way, each chart captures the touch events, and passes a concrete
-/// instance of [FlTouchInput] to the painter, and gets a generated [BaseTouchResponse].
+/// in a simple way, each chart's renderer captures the touch events, and passes the pointerEvent
+/// to the painter, and gets touched spot, and wraps it into a concrete [BaseTouchResponse].
 class FlTouchData with EquatableMixin {
   /// You can disable or enable the touch system using [enabled] flag,
   final bool enabled;
@@ -83,7 +81,7 @@ class FlTouchData with EquatableMixin {
 
   /// Used for equality check, see [EquatableMixin].
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         enabled,
       ];
 }
@@ -97,10 +95,10 @@ class FlClipData with EquatableMixin {
 
   /// Creates data that clips specified sides
   FlClipData({
-    @required this.top,
-    @required this.bottom,
-    @required this.left,
-    @required this.right,
+    required this.top,
+    required this.bottom,
+    required this.left,
+    required this.right,
   });
 
   /// Creates data that clips all sides
@@ -120,7 +118,7 @@ class FlClipData with EquatableMixin {
 
   /// Used for equality check, see [EquatableMixin].
   @override
-  List<Object> get props => [top, bottom, left, right];
+  List<Object?> get props => [top, bottom, left, right];
 }
 
 /// It gives you the axis value and gets a String value based on it.
@@ -147,20 +145,14 @@ TextStyle defaultGetTitleTextStyle(double value) {
   );
 }
 
-/// The signature for a callback that provides a map of position offsets.
-typedef GetPositionOffsetsFunction = void Function(Map<int, Offset> offsetsMap);
-
 /// This class holds the touch response details.
 ///
 /// Specific touch details should be hold on the concrete child classes.
-class BaseTouchResponse with EquatableMixin {
-  final FlTouchInput touchInput;
+class BaseTouchResponse {
+  final PointerEvent touchInput;
+  final bool clickHappened;
 
-  BaseTouchResponse(FlTouchInput touchInput) : touchInput = touchInput;
-
-  /// Used for equality check, see [EquatableMixin].
-  @override
-  List<Object> get props => [
-        touchInput,
-      ];
+  BaseTouchResponse(PointerEvent touchInput, bool isClickHappened)
+      : touchInput = touchInput,
+        clickHappened = isClickHappened;
 }

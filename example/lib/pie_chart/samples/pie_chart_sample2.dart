@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter/gestures.dart';
 import 'indicator.dart';
 
 class PieChartSample2 extends StatefulWidget {
@@ -9,7 +9,7 @@ class PieChartSample2 extends StatefulWidget {
 }
 
 class PieChart2State extends State {
-  int touchedIndex;
+  int touchedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +29,12 @@ class PieChart2State extends State {
                   PieChartData(
                       pieTouchData: PieTouchData(touchCallback: (pieTouchResponse) {
                         setState(() {
-                          if (pieTouchResponse.touchInput is FlLongPressEnd ||
-                              pieTouchResponse.touchInput is FlPanEnd) {
-                            touchedIndex = -1;
+                          final desiredTouch = pieTouchResponse.touchInput is! PointerExitEvent &&
+                              pieTouchResponse.touchInput is! PointerUpEvent;
+                          if (desiredTouch && pieTouchResponse.touchedSection != null) {
+                            touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
                           } else {
-                            touchedIndex = pieTouchResponse.touchedSectionIndex;
+                            touchedIndex = -1;
                           }
                         });
                       }),
@@ -97,8 +98,8 @@ class PieChart2State extends State {
   List<PieChartSectionData> showingSections() {
     return List.generate(4, (i) {
       final isTouched = i == touchedIndex;
-      final double fontSize = isTouched ? 25 : 16;
-      final double radius = isTouched ? 60 : 50;
+      final fontSize = isTouched ? 25.0 : 16.0;
+      final radius = isTouched ? 60.0 : 50.0;
       switch (i) {
         case 0:
           return PieChartSectionData(
@@ -137,7 +138,7 @@ class PieChart2State extends State {
                 fontSize: fontSize, fontWeight: FontWeight.bold, color: const Color(0xffffffff)),
           );
         default:
-          return null;
+          throw Error();
       }
     });
   }

@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 class LineChartSample3 extends StatefulWidget {
   final weekDays = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -11,7 +12,7 @@ class LineChartSample3 extends StatefulWidget {
 }
 
 class _LineChartSample3State extends State<LineChartSample3> {
-  double touchedValue;
+  late double touchedValue;
 
   @override
   void initState() {
@@ -53,7 +54,7 @@ class _LineChartSample3State extends State<LineChartSample3> {
               lineTouchData: LineTouchData(
                   getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
                     return spotIndexes.map((spotIndex) {
-                      final FlSpot spot = barData.spots[spotIndex];
+                      final spot = barData.spots[spotIndex];
                       if (spot.x == 0 || spot.x == 6) {
                         return null;
                       }
@@ -90,16 +91,42 @@ class _LineChartSample3State extends State<LineChartSample3> {
                           }
 
                           return LineTooltipItem(
-                            '${widget.weekDays[flSpot.x.toInt()]} \n${flSpot.y} k calories',
-                            const TextStyle(color: Colors.white),
+                            '${widget.weekDays[flSpot.x.toInt()]} \n',
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: flSpot.y.toString(),
+                                style: TextStyle(
+                                  color: Colors.grey[100],
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' k ',
+                                style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'calories',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
                           );
                         }).toList();
                       }),
                   touchCallback: (LineTouchResponse lineTouch) {
-                    if (lineTouch.lineBarSpots.length == 1 &&
-                        lineTouch.touchInput is! FlLongPressEnd &&
-                        lineTouch.touchInput is! FlPanEnd) {
-                      final value = lineTouch.lineBarSpots[0].x;
+                    final desiredTouch = lineTouch.touchInput is! PointerExitEvent &&
+                        lineTouch.touchInput is! PointerUpEvent;
+
+                    if (desiredTouch && lineTouch.lineBarSpots != null) {
+                      final value = lineTouch.lineBarSpots![0].x;
 
                       if (value == 0 || value == 6) {
                         setState(() {

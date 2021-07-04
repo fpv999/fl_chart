@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/base/base_chart/base_chart_painter.dart';
+import 'package:fl_chart/src/chart/base/line.dart';
+import 'package:fl_chart/src/utils/canvas_wrapper.dart';
 import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -9,38 +11,18 @@ import 'package:flutter/widgets.dart';
 import 'pie_chart_data.dart';
 
 /// Paints [PieChartData] in the canvas, it can be used in a [CustomPainter]
-class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<PieTouchResponse> {
-  Paint _sectionPaint, _sectionsSpaceClearPaint, _centerSpacePaint;
-
-  /// A callback that provides position offsets for the badge widgets.
-  GetPositionOffsetsFunction _badgeWidgetsOffsetsProvider;
+class PieChartPainter extends BaseChartPainter<PieChartData> {
+  late Paint _sectionPaint, _sectionsSpaceClearPaint, _centerSpacePaint;
 
   /// Paints [data] into canvas, it is the animating [PieChartData],
   /// [targetData] is the animation's target and remains the same
   /// during animation, then we should use it  when we need to show
   /// tooltips or something like that, because [data] is changing constantly.
   ///
-  /// [touchHandler] passes a [TouchHandler] to the parent,
-  /// parent will use it for touch handling flow.
-  ///
   /// [textScale] used for scaling texts inside the chart,
   /// parent can use [MediaQuery.textScaleFactor] to respect
   /// the system's font size.
-  PieChartPainter(
-    PieChartData data,
-    PieChartData targetData,
-    Function(TouchHandler) touchHandler, {
-    double textScale,
-    GetPositionOffsetsFunction badgeWidgetsOffsetsProvider,
-  }) : super(
-          data,
-          targetData,
-          textScale: textScale,
-        ) {
-    touchHandler(this);
-
-    _badgeWidgetsOffsetsProvider = badgeWidgetsOffsetsProvider;
-
+  PieChartPainter() : super() {
     _sectionPaint = Paint()..style = PaintingStyle.stroke;
 
     _sectionsSpaceClearPaint = Paint()
@@ -48,24 +30,24 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
       ..color = const Color(0x000000000)
       ..blendMode = BlendMode.srcOut;
 
-    _centerSpacePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = data.centerSpaceColor;
+    _centerSpacePaint = Paint()..style = PaintingStyle.fill;
   }
 
   /// Paints [PieChartData] into the provided canvas.
   @override
-  void paint(Canvas canvas, Size size) {
-    super.paint(canvas, size);
+  void paint(CanvasWrapper canvasWrapper, PaintHolder<PieChartData> holder) {
+    super.paint(canvasWrapper, holder);
+    final data = holder.data;
     if (data.sections.isEmpty) {
       return;
     }
 
-    final List<double> sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
+    final sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
+    final centerRadius = _calculateCenterRadius(canvasWrapper.size, holder);
 
-    _drawCenterSpace(canvas, size);
-    _drawSections(canvas, size, sectionsAngle);
-    _calculateOverlays(canvas, size);
+    _drawCenterSpace(canvasWrapper, holder);
+    _drawSections(canvasWrapper, sectionsAngle, centerRadius, holder);
+    _drawTexts(canvasWrapper, holder, centerRadius);
   }
 
   List<double> _calculateSectionsAngle(List<PieChartSectionData> sections, double sumValue) {
@@ -74,208 +56,254 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
     }).toList();
   }
 
-  void _drawCenterSpace(Canvas canvas, Size viewSize) {
-    final double centerX = viewSize.width / 2;
-    final double centerY = viewSize.height / 2;
+  void _drawCenterSpace(CanvasWrapper canvasWrapper, PaintHolder<PieChartData> holder) {
+    final data = holder.data;
+    final viewSize = canvasWrapper.size;
+    final centerX = viewSize.width / 2;
+    final centerY = viewSize.height / 2;
 
-    canvas.drawCircle(Offset(centerX, centerY), data.centerSpaceRadius, _centerSpacePaint);
+    _centerSpacePaint.color = data.centerSpaceColor;
+    canvasWrapper.drawCircle(Offset(centerX, centerY), data.centerSpaceRadius, _centerSpacePaint);
   }
 
-  void _drawSections(Canvas canvas, Size viewSize, List<double> sectionsAngle) {
-    final shouldDrawSeparators = data.sectionsSpace != 0 && data.sections.length != 1;
+  void _drawSections(
+    CanvasWrapper canvasWrapper,
+    List<double> sectionsAngle,
+    double centerRadius,
+    PaintHolder<PieChartData> holder,
+  ) {
+    final data = holder.data;
+    final shouldDrawSeparators = data.sectionsSpace != 0 && data.sections.length > 1;
+
+    final viewSize = canvasWrapper.size;
 
     if (shouldDrawSeparators) {
-      canvas.saveLayer(Rect.fromLTWH(0, 0, viewSize.width, viewSize.height), Paint());
+      canvasWrapper.saveLayer(Rect.fromLTWH(0, 0, viewSize.width, viewSize.height), Paint());
     }
 
-    final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
+    final center = Offset(viewSize.width / 2, viewSize.height / 2);
 
-    double tempAngle = data.startDegreeOffset;
+    var tempAngle = data.startDegreeOffset;
 
-    for (int i = 0; i < data.sections.length; i++) {
+    for (var i = 0; i < data.sections.length; i++) {
       final section = data.sections[i];
+      if (section.value == 0) {
+        continue;
+      }
       final sectionDegree = sectionsAngle[i];
 
-      final rect = Rect.fromCircle(
+      final sectionRadiusRect = Rect.fromCircle(
         center: center,
-        radius: _calculateCenterRadius(viewSize, data.centerSpaceRadius) + (section.radius / 2),
+        radius: centerRadius + section.radius,
       );
+
+      final centerRadiusRect = Rect.fromCircle(
+        center: center,
+        radius: centerRadius,
+      );
+
+      if (sectionDegree == 360) {
+        _sectionPaint.color = section.color;
+        _sectionPaint.strokeWidth = section.radius;
+        _sectionPaint.style = PaintingStyle.stroke;
+        canvasWrapper.drawCircle(center, centerRadius + section.radius / 2, _sectionPaint);
+        return;
+      }
+
+      final startRadians = radians(tempAngle);
+      final sweepRadians = radians(sectionDegree);
+      final endRadians = startRadians + sweepRadians;
+
+      final startLineDirection = Offset(math.cos(startRadians), math.sin(startRadians));
+      final startLineFrom = center + startLineDirection * centerRadius;
+      final startLineTo = startLineFrom + startLineDirection * section.radius;
+      final startLine = Line(startLineFrom, startLineTo);
+
+      final endLineDirection = Offset(math.cos(endRadians), math.sin(endRadians));
+      final endLineFrom = center + endLineDirection * centerRadius;
+      final endLineTo = endLineFrom + endLineDirection * section.radius;
+      final endLine = Line(endLineFrom, endLineTo);
+
+      final sectionPath = _generateSectionPath(
+          startLine, endLine, startRadians, endRadians, sectionRadiusRect, centerRadiusRect);
 
       _sectionPaint.color = section.color;
-      _sectionPaint.strokeWidth = section.radius;
-
-      final double startAngle = tempAngle;
-      final double sweepAngle = sectionDegree;
-      canvas.drawArc(
-        rect,
-        radians(startAngle),
-        radians(sweepAngle),
-        false,
-        _sectionPaint,
-      );
-
-      tempAngle += sweepAngle;
+      _sectionPaint.style = PaintingStyle.fill;
+      canvasWrapper.drawPath(sectionPath, _sectionPaint);
+      tempAngle += sectionDegree;
     }
 
     if (shouldDrawSeparators) {
-      _removeSectionsSpace(canvas, viewSize);
+      _removeSectionsSpace(canvasWrapper, holder, centerRadius);
     }
+  }
+
+  /// Generates a path around a section
+  Path _generateSectionPath(
+    Line startLine,
+    Line endLine,
+    double startRadians,
+    double endRadians,
+    Rect sectionRadiusRect,
+    Rect centerRadiusRect,
+  ) {
+    final sweepRadians = endRadians - startRadians;
+    return Path()
+      ..moveTo(startLine.from.dx, startLine.from.dy)
+      ..lineTo(startLine.to.dx, startLine.to.dy)
+      ..arcTo(sectionRadiusRect, startRadians, sweepRadians, false)
+      ..lineTo(endLine.from.dx, endLine.from.dy)
+      ..arcTo(centerRadiusRect, endRadians, -sweepRadians, false)
+      ..moveTo(startLine.from.dx, startLine.from.dy)
+      ..close();
   }
 
   /// firstly the sections draw close to eachOther without any space,
   /// then here we clear a line with given [PieChartData.width]
-  void _removeSectionsSpace(Canvas canvas, Size viewSize) {
-    const double extraLineSize = 1;
-    final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
+  void _removeSectionsSpace(
+    CanvasWrapper canvasWrapper,
+    PaintHolder<PieChartData> holder,
+    double centerRadius,
+  ) {
+    final data = holder.data;
+    final viewSize = canvasWrapper.size;
+    const extraLineSize = 1;
+    final center = Offset(viewSize.width / 2, viewSize.height / 2);
 
-    double tempAngle = data.startDegreeOffset;
+    var tempAngle = data.startDegreeOffset;
     data.sections.asMap().forEach((index, section) {
-      final int previousIndex = index == 0 ? data.sections.length - 1 : index - 1;
+      final previousIndex = index == 0 ? data.sections.length - 1 : index - 1;
       final previousSection = data.sections[previousIndex];
 
-      final double maxSectionRadius = math.max(section.radius, previousSection.radius);
+      final maxSectionRadius = math.max(section.radius, previousSection.radius);
 
-      final double startAngle = tempAngle;
-      final double sweepAngle = 360 * (section.value / data.sumValue);
+      final startAngle = tempAngle;
+      final sweepAngle = 360 * (section.value / data.sumValue);
 
-      final Offset sectionsStartFrom = center +
+      final sectionsStartFrom = center +
           Offset(
-            math.cos(radians(startAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) - extraLineSize),
-            math.sin(radians(startAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) - extraLineSize),
+            math.cos(radians(startAngle)) * (centerRadius - extraLineSize),
+            math.sin(radians(startAngle)) * (centerRadius - extraLineSize),
           );
 
-      final Offset sectionsStartTo = center +
+      final sectionsStartTo = center +
           Offset(
-            math.cos(radians(startAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) +
-                    maxSectionRadius +
-                    extraLineSize),
-            math.sin(radians(startAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) +
-                    maxSectionRadius +
-                    extraLineSize),
+            math.cos(radians(startAngle)) * (centerRadius + maxSectionRadius + extraLineSize),
+            math.sin(radians(startAngle)) * (centerRadius + maxSectionRadius + extraLineSize),
           );
 
       _sectionsSpaceClearPaint.strokeWidth = data.sectionsSpace;
-      canvas.drawLine(sectionsStartFrom, sectionsStartTo, _sectionsSpaceClearPaint);
+      canvasWrapper.drawLine(sectionsStartFrom, sectionsStartTo, _sectionsSpaceClearPaint);
       tempAngle += sweepAngle;
     });
-    canvas.restore();
+    canvasWrapper.restore();
   }
 
   /// Calculates layout of overlaying elements, includes:
   /// - title text
   /// - badge widget positions
-  void _calculateOverlays(Canvas canvas, Size viewSize) {
-    final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
-    final Map<int, Offset> badgeWidgetsOffsets = <int, Offset>{};
+  void _drawTexts(
+    CanvasWrapper canvasWrapper,
+    PaintHolder<PieChartData> holder,
+    double centerRadius,
+  ) {
+    final data = holder.data;
+    final viewSize = canvasWrapper.size;
+    final center = Offset(viewSize.width / 2, viewSize.height / 2);
 
-    double tempAngle = data.startDegreeOffset;
+    var tempAngle = data.startDegreeOffset;
 
-    for (int i = 0; i < data.sections.length; i++) {
-      final PieChartSectionData section = data.sections[i];
-      final double startAngle = tempAngle;
-      final double sweepAngle = 360 * (section.value / data.sumValue);
-      final double sectionCenterAngle = startAngle + (sweepAngle / 2);
+    for (var i = 0; i < data.sections.length; i++) {
+      final section = data.sections[i];
+      if (section.value == 0) {
+        continue;
+      }
+      final startAngle = tempAngle;
+      final sweepAngle = 360 * (section.value / data.sumValue);
+      final sectionCenterAngle = startAngle + (sweepAngle / 2);
 
       Offset sectionCenter(double percentageOffset) =>
           center +
           Offset(
             math.cos(radians(sectionCenterAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) +
-                    (section.radius * percentageOffset)),
+                (centerRadius + (section.radius * percentageOffset)),
             math.sin(radians(sectionCenterAngle)) *
-                (_calculateCenterRadius(viewSize, data.centerSpaceRadius) +
-                    (section.radius * percentageOffset)),
+                (centerRadius + (section.radius * percentageOffset)),
           );
 
-      final Offset sectionCenterOffsetTitle = sectionCenter(section.titlePositionPercentageOffset);
-      final Offset sectionCenterOffsetBadgeWidget =
-          sectionCenter(section.badgePositionPercentageOffset);
+      final sectionCenterOffsetTitle = sectionCenter(section.titlePositionPercentageOffset);
 
       if (section.showTitle) {
-        final TextSpan span = TextSpan(
+        final span = TextSpan(
           style: section.titleStyle,
           text: section.title,
         );
-        final TextPainter tp = TextPainter(
+        final tp = TextPainter(
             text: span,
             textAlign: TextAlign.center,
             textDirection: TextDirection.ltr,
-            textScaleFactor: textScale);
+            textScaleFactor: holder.textScale);
 
         tp.layout();
-        tp.paint(canvas, sectionCenterOffsetTitle - Offset(tp.width / 2, tp.height / 2));
-      }
-
-      if (section.badgeWidget != null) {
-        badgeWidgetsOffsets[i] = sectionCenterOffsetBadgeWidget;
+        canvasWrapper.drawText(tp, sectionCenterOffsetTitle - Offset(tp.width / 2, tp.height / 2));
       }
 
       tempAngle += sweepAngle;
     }
-
-    _badgeWidgetsOffsetsProvider(badgeWidgetsOffsets);
   }
 
-  double _calculateCenterRadius(Size viewSize, double givenCenterRadius) {
-    if (!givenCenterRadius.isInfinite) {
-      return givenCenterRadius;
+  double _calculateCenterRadius(Size viewSize, PaintHolder<PieChartData> holder) {
+    final data = holder.data;
+    if (data.centerSpaceRadius.isFinite) {
+      return data.centerSpaceRadius;
     }
-
-    double maxRadius = 0;
-    for (int i = 0; i < data.sections.length; i++) {
-      final section = data.sections[i];
-      if (section.radius > maxRadius) {
-        maxRadius = section.radius;
-      }
-    }
-
-    final minWidthHeight = math.min(viewSize.width, viewSize.height);
-    final centerRadius = (minWidthHeight - (maxRadius * 2)) / 2;
-    return centerRadius;
+    final maxRadius = data.sections.reduce((a, b) => a.radius > b.radius ? a : b).radius;
+    return (viewSize.shortestSide - (maxRadius * 2)) / 2;
   }
 
-  /// Makes a [PieTouchResponse] based on the provided [FlTouchInput]
+  /// Makes a [PieTouchedSection] based on the provided [touchInput]
   ///
-  /// Processes [FlTouchInput.getOffset] and checks
+  /// Processes [PointerEvent.localPosition] and checks
   /// the elements of the chart that are near the offset,
-  /// then makes a [PieTouchResponse] from the elements that has been touched.
-  @override
-  PieTouchResponse handleTouch(FlTouchInput touchInput, Size size) {
-    final List<double> sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
-    return _getTouchedDetails(size, touchInput, sectionsAngle);
+  /// then makes a [PieTouchedSection] from the elements that has been touched.
+  PieTouchedSection? handleTouch(
+    PointerEvent touchInput,
+    Size size,
+    PaintHolder<PieChartData> holder,
+  ) {
+    final data = holder.data;
+    final sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
+    return _getTouchedSection(size, touchInput, sectionsAngle, holder);
   }
 
   /// find touched section by the value of [touchInputNotifier]
-  PieTouchResponse _getTouchedDetails(
-      Size viewSize, FlTouchInput touchInput, List<double> sectionsAngle) {
+  PieTouchedSection? _getTouchedSection(
+    Size viewSize,
+    PointerEvent touchInput,
+    List<double> sectionsAngle,
+    PaintHolder<PieChartData> holder,
+  ) {
+    final data = holder.data;
     final center = Offset(viewSize.width / 2, viewSize.height / 2);
 
-    if (touchInput.getOffset() == null) {
-      return null;
-    }
-
-    final touchedPoint2 = touchInput.getOffset() - center;
+    final touchedPoint2 = touchInput.localPosition - center;
 
     final touchX = touchedPoint2.dx;
     final touchY = touchedPoint2.dy;
 
     final touchR = math.sqrt(math.pow(touchX, 2) + math.pow(touchY, 2));
-    double touchAngle = degrees(math.atan2(touchY, touchX));
+    var touchAngle = degrees(math.atan2(touchY, touchX));
     touchAngle = touchAngle < 0 ? (180 - touchAngle.abs()) + 180 : touchAngle;
 
-    PieChartSectionData foundSectionData;
-    int foundSectionDataPosition;
+    PieChartSectionData? foundSectionData;
+    var foundSectionDataPosition = -1;
 
     /// Find the nearest section base on the touch spot
     final relativeTouchAngle = (touchAngle - data.startDegreeOffset) % 360;
-    double tempAngle = 0.0;
-    for (int i = 0; i < data.sections.length; i++) {
+    var tempAngle = 0.0;
+    for (var i = 0; i < data.sections.length; i++) {
       final section = data.sections[i];
-      double sectionAngle = sectionsAngle[i];
+      var sectionAngle = sectionsAngle[i];
 
       tempAngle %= 360;
       if (data.sections.length == 1) {
@@ -291,7 +319,7 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
       final isInDegree = relativeTouchAngle >= fromDegree && relativeTouchAngle <= toDegree;
 
       /// radius criteria
-      final centerRadius = _calculateCenterRadius(viewSize, data.centerSpaceRadius);
+      final centerRadius = _calculateCenterRadius(viewSize, holder);
       final sectionRadius = centerRadius + section.radius;
       final isInRadius = touchR > centerRadius && touchR <= sectionRadius;
 
@@ -304,14 +332,45 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
       tempAngle += sectionAngle;
     }
 
-    return PieTouchResponse(
-        foundSectionData, foundSectionDataPosition, touchAngle, touchR, touchInput);
+    return PieTouchedSection(foundSectionData, foundSectionDataPosition, touchAngle, touchR);
   }
 
-  /// Determines should it redraw the chart or not.
-  ///
-  /// If there is a change in the [PieChartData],
-  /// [PieChartPainter] should repaint itself.
-  @override
-  bool shouldRepaint(PieChartPainter oldDelegate) => oldDelegate.data != data;
+  /// Exposes offset for laying out the badge widgets upon the chart.
+  Map<int, Offset> getBadgeOffsets(Size viewSize, PaintHolder<PieChartData> holder) {
+    final data = holder.data;
+    final center = viewSize.center(Offset.zero);
+    final badgeWidgetsOffsets = <int, Offset>{};
+
+    if (data.sections.isEmpty) {
+      return badgeWidgetsOffsets;
+    }
+
+    var tempAngle = data.startDegreeOffset;
+
+    final sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
+    for (var i = 0; i < data.sections.length; i++) {
+      final section = data.sections[i];
+      final startAngle = tempAngle;
+      final sweepAngle = sectionsAngle[i];
+      final sectionCenterAngle = startAngle + (sweepAngle / 2);
+      final centerRadius = _calculateCenterRadius(viewSize, holder);
+
+      Offset sectionCenter(double percentageOffset) =>
+          center +
+          Offset(
+            math.cos(radians(sectionCenterAngle)) *
+                (centerRadius + (section.radius * percentageOffset)),
+            math.sin(radians(sectionCenterAngle)) *
+                (centerRadius + (section.radius * percentageOffset)),
+          );
+
+      final sectionCenterOffsetBadgeWidget = sectionCenter(section.badgePositionPercentageOffset);
+
+      badgeWidgetsOffsets[i] = sectionCenterOffsetBadgeWidget;
+
+      tempAngle += sweepAngle;
+    }
+
+    return badgeWidgetsOffsets;
+  }
 }
