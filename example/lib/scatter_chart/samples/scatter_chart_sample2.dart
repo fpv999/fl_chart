@@ -7,13 +7,11 @@ class ScatterChartSample2 extends StatefulWidget {
 }
 
 class _ScatterChartSample2State extends State {
-  int touchedIndex;
+  int touchedIndex = -1;
 
   Color greyColor = Colors.grey;
 
   List<int> selectedSpots = [];
-
-  int lastPanStartOnIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -97,23 +95,55 @@ class _ScatterChartSample2State extends State {
               handleBuiltInTouches: false,
               touchTooltipData: ScatterTouchTooltipData(
                 tooltipBgColor: Colors.black,
+                getTooltipItems: (ScatterSpot touchedBarSpot) {
+                  return ScatterTooltipItem(
+                    'X: ',
+                    TextStyle(
+                      height: 1.2,
+                      color: Colors.grey[100],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    10,
+                    children: [
+                      TextSpan(
+                        text: '${touchedBarSpot.x.toInt()} \n',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontStyle: FontStyle.normal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: 'Y: ',
+                        style: TextStyle(
+                          height: 1.2,
+                          color: Colors.grey[100],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      TextSpan(
+                        text: touchedBarSpot.y.toInt().toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontStyle: FontStyle.normal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               touchCallback: (ScatterTouchResponse touchResponse) {
-                if (touchResponse.touchInput is FlPanStart) {
-                  lastPanStartOnIndex = touchResponse.touchedSpotIndex;
-                } else if (touchResponse.touchInput is FlPanEnd) {
-                  final FlPanEnd flPanEnd = touchResponse.touchInput;
-
-                  if (flPanEnd.velocity.pixelsPerSecond <= const Offset(4, 4)) {
-                    // Tap happened
-                    setState(() {
-                      if (selectedSpots.contains(lastPanStartOnIndex)) {
-                        selectedSpots.remove(lastPanStartOnIndex);
-                      } else {
-                        selectedSpots.add(lastPanStartOnIndex);
-                      }
-                    });
-                  }
+                if (touchResponse.clickHappened && touchResponse.touchedSpot != null) {
+                  final sectionIndex = touchResponse.touchedSpot!.spotIndex;
+                  // Tap happened
+                  setState(() {
+                    if (selectedSpots.contains(sectionIndex)) {
+                      selectedSpots.remove(sectionIndex);
+                    } else {
+                      selectedSpots.add(sectionIndex);
+                    }
+                  });
                 }
               },
             ),

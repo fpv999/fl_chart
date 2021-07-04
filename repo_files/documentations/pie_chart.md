@@ -6,12 +6,18 @@
 ```dart
 PieChart(
   PieChartData(
-    // read about it in the below section
+    // read about it in the PieChartData section
   ),
+  swapAnimationDuration: Duration(milliseconds: 150), // Optional
+  swapAnimationCurve: Curves.linear, // Optional
 );
 ```
 
 **If you have a padding widget around the PieChart, make sure to set `PieChartData.centerSpaceRadius` to `double.infinity`**
+
+
+### Implicit Animations
+When you change the chart's state, it animates to the new state internally (using [implicit animations](https://flutter.dev/docs/development/ui/animations/implicit-animations)). You can control the animation [duration](https://api.flutter.dev/flutter/dart-core/Duration-class.html) and [curve](https://api.flutter.dev/flutter/animation/Curves-class.html) using optional `swapAnimationDuration` and `swapAnimationCurve` properties, respectively.
 
 ### PieChartData
 |PropName		|Description	|default value|
@@ -19,7 +25,7 @@ PieChart(
 |sections| list of [PieChartSectionData ](#PieChartSectionData) that is shown on the pie chart|[]|
 |centerSpaceRadius| free space in the middle of the PieChart, set `double.infinity` if you want it to be calculated according to the view size| double.nan|
 |centerSpaceColor| colors the free space in the middle of the PieChart|Colors.transparent|
-|sectionsSpace| space between the sections (margin of them), **Ignored on web**|2|
+|sectionsSpace| space between the sections (margin of them)|2|
 |startDegreeOffset| degree offset of the sections around the pie chart, should be between 0 and 360|0|
 |pieTouchData| [PieTouchData](#PieTouchData) holds the touch interactivity details| PieTouchData()|
 |borderData| shows a border around the chart, check the [FlBorderData](base_chart.md#FlBorderData)|FlBorderData()|
@@ -48,12 +54,17 @@ PieChart(
 ### PieTouchResponse
 |PropName|Description|default value|
 |:-------|:----------|:------------|
-|sectionData|the [PieChartSectionData](#PieChartSectionData) that user touched| null |
+|touchedSection|Instance of [PieTouchedSection](#PieTouchedSection) which holds data about the touched section|null|
+|touchInput|a [PointerEvent](https://api.flutter.dev/flutter/gestures/PointerEvent-class.html) that is the touch behaviour|null|
+|clickHappened|If we detect a click event, this property is tru|false|
+
+### PieTouchedSection
+|PropName|Description|default value|
+|:-------|:----------|:------------|
+|touchedSection|the [PieChartSectionData](#PieChartSectionData) that user touched| null |
 |touchedSectionIndex| index of the touched section | null|
 |touchAngle|the angle of the touch|null|
 |touchRadius| the radius of the touch|null|
-|touchInput|a [FlTouchInput](base_chart.md#FlTouchInput) that is the touch behaviour|null|
-
 
 ### some samples
 ----

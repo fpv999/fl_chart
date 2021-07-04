@@ -1,3 +1,81 @@
+## 0.36.2
+* **IMPROVEMENT** Support `onMouseExit` event in all charts.
+* **IMPROVEMENT** Add `rotateAngle` property in [LineTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetouchtooltipdata), [BarTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartouchtooltipdata), [ScatterTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#scattertouchtooltipdata), #260, #679.
+* **BUGFIX** Fix PieChart section index problem, when there is a section with 0 value, #697.
+
+
+## 0.36.1
+* **IMPROVEMENT** Allow to set zero value on PieChartSectionData (we remove zero sections instead of crashing), #640.
+* **BUGFIX** Fix NPE crash in our renderers touchCallback, #651. 
+* **BUGFIX** Fix line index problem in LineChart, #665. (It has appeared in `0.36.0`, we had to revert 2nd change of `0.36.0`)
+* **BREAKING** Remove unused `lineIndex` property from (ShowingTooltipIndicators)[https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#showingtooltipindicators].
+
+## 0.36.0
+* **BUGFIX** Fixed bug of lerping FlSpot.nullSpot, #487.
+* **BUGFIX** Fixed showing tooltip problem when animating chart, #647.
+* **BUGFIX** Fixed RadarChart drawing problem, #627.
+* **IMPROVEMENT** Now [SideTitles](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/base_chart.md#SideTitles).`interval` is working correctly in bottomTitles in the BarChart, #648.
+* **BREAKING** You should provide `spotsIndices` instead of `showingSpots` in [ShowingTooltipIndicators](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#showingtooltipindicators).
+
+## 0.35.0
+* **IMPROVEMENT** Added `children` property in the [LineTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetooltipitem), [BarTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartooltipitem) and [ScatterTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#scattertooltipitem) which accepts a list of [TextSpan](https://api.flutter.dev/flutter/painting/TextSpan-class.html). It allows you to have more customized texts inside the tooltip. See [BarChartSample1](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#sample-1-source-code) and [ScatterSample2](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#sample-2-source-code), #72, #294.
+* **IMPROVEMENT** Added `getTouchLineStart` and `getTouchLineEnd` in [LineTouchData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetouchdata-read-about-touch-handling) to give more customizability over showing the touch lines. see [SampleLineChart9](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#sample-8-source-code).
+* **IMPROVEMENT** Enabled `sectionsSpace` in PieChart for the web.
+* **IMPROVEMENT** Added [Makefile](https://makefiletutorial.com) commands which makes it comfortable for verifying your code before push (It is related to contributors, red more about it in [CONTRIBUTING.md](https://github.com/imaNNeoFighT/fl_chart/blob/master/CONTRIBUTING.md)).
+* **IMPROVEMENT** Added `FlDotCrossPainter` which extends `FlDotPainter` to paint X marks on line chart spots.
+* **IMPROVEMENT** Added `textDirection` property in [LineTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetooltipitem), [BarTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartooltipitem) and [ScatterTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#scattertooltipitem). It allows you to support rtl languages in tooltips.
+* **IMPROVEMENT** Added `textDirection` property in [SideTitles](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/base_chart.md#sidetitles) class, #531. It allows you to support rtl languages in side titles.
+* **IMPROVEMENT** Added `textDirection` property in [AxisTitles](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/base_chart.md#AxisTitle) class. It allows you to support rtl languages in axis titles.
+* **BUGFIX** Fixed some bugs on drawing PieChart (for example when we have only one section), #582, 
+* **BREAKING** Border of pieChart now is hide by default (you can show it using `borderData: FlBorderData(show: true)`.
+* **BREAKING** You cannot set `0` value on [PieChartSectionData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/pie_chart.md#piechartsectiondata).value anymore, instead remove it from list.
+* **BREAKING** Removed `fullHeightTouchLine` property from [LineTouchData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetouchdata-read-about-touch-handling). Now you can have a full line with following snippet:
+```dart
+LineTouchData(
+  ...
+  getTouchLineStart: (barData, index) => -double.infinity // default: from bottom,
+  getTouchLineEnd: (barData, index) => double.infinity //to top,
+  ...
+)
+```
+
+## 0.30.0
+* [IMPROVEMENT] We now use [RenderObject](https://api.flutter.dev/flutter/rendering/RenderObject-class.html) as our default drawing system. It brings a lot of stability. Such as size handling, hitTest handling (touches), and It makes us possible to paint Widgets inside our chart (It might fix #383, #556, #582, #584, #591).
+* [IMPROVEMENT] Added [Radar Chart Documentations](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/radar_chart.md)
+* [IMPROVEMENT] Added `textAlign` property in the [BarTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartooltipitem), [LineTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetooltipitem), and [ScatterTooltipItem](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#scattertooltipitem), default is `TextAlign.center`.
+* [IMPROVEMENT] Added `direction` property in the [BarTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartouchtooltipdata), and [LineTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetouchtooltipdata) to specify the position of the tooltip (can be `auto`, `top`, `bottom`), default is `auto`.
+* [IMPROVEMENT] Updated touch flow, we now use [hitTest](https://api.flutter.dev/flutter/rendering/RenderProxyBoxWithHitTestBehavior/hitTest.html) for handling touch and interactions.
+* [IMPROVEMENT] Added 'clickHappened' property in all of our TouchResponses (such as [LineTouchResponse](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#LineTouchResponse), [BarTouchResponse](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartouchresponse), ...), #210.
+* [IMPROVEMENT] Added `swapAnimationCurve` property to all chart widgets which handles the built-in animation [Curve](https://api.flutter.dev/flutter/animation/Curves-class.html), #436.
+* [BREAKING] Some properties in [ScatterTouchResponse](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/scatter_chart.md#scattertouchresponse), and [PieTouchResponse](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/pie_chart.md#pietouchresponse) moved to a wrapper class, you need to access them through that wrapper class.
+* [BREAKING] Renamed `tooltipBottomMargin` to `tooltipMargin` property in the [BarTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#bartouchtooltipdata), and [LineTouchTooltipData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#linetouchtooltipdata)
+* [Bugfix] Fixed `double.infinity` in [PieChartData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/pie_chart.md#piechartdata) .centerSpaceRadius, #584. 
+
+## 0.20.1
+* [BREAKING] We now support flutter version 2.0 (null-safety), check out the [migration guide](https://dart.dev/null-safety/migration-guide).
+* [NEW_CHART] We have added [RadarChart](https://github.com/payam-zahedi/fl_chart/blob/master/repo_files/documentations/radar_chart.md). Thanks to [Payam Zahedi](https://github.com/payam-zahedi)!
+
+## 0.20.0-nullsafety1
+* [BREAKING] **We have migrated our project to null-safety. You may need to change your source-code to compile**. check [migration guide](https://dart.dev/null-safety/migration-guide).
+* [BREAKING] You cannot set null value on FlSpot any more (use FlSpot.nullSpot instead).
+
+## 0.12.3
+* [Bugfix] Fixed PieChart exception bug on sections tap, #514.
+* [Bugfix] Fixed PieChart badges problem, #538.
+* [Bugfix] Fixed Bug of drawing lines with strokeWidth zero, #558.
+* [Improvement] Updated example app to support web.
+* [Improvement] Show tooltips on mouse hover on Web, and Desktop.
+
+## 0.12.2
+* [Bugfix] Fixed PieChart badges draw in first frame problem, #513.
+* [Improvement] Use CanvasWrapper to proxy draw functions (It does not have any effect on the result, it makes the code testable)
+
+## 0.12.1
+* [Bugfix] Fixed PieChart badges bug with re-implementing the solution, #507
+* [Bugfix] Fix the setState issue using PieChart in the ListView, #467
+* [Bugfix] Fixed formatNumber bug for negative numbers, #486.
+* [Improvement] Added applyCutOffY property in [BarAreaSpotsLine](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/line_chart.md#barareaspotsline) to inherit cutOffY property of its parent, #478.
+
 ## 0.12.0
 * [Improvement] [BREAKING] Replaced `color` property with `colors` in [BarChartRodData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#barchartroddata), and [BackgroundBarChartRodData](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#backgroundbarchartroddata) to support gradient in BarChart, instead of solid color, #166. Check [BarChartSample3](https://github.com/imaNNeoFighT/fl_chart/blob/master/repo_files/documentations/bar_chart.md#sample-3-source-code)
 * [Improvement] Improved gradient stops calculating algorithm.
