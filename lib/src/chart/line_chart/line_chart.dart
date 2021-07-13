@@ -85,7 +85,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         touchResponse.touchInput is PointerMoveEvent ||
         touchResponse.touchInput is PointerHoverEvent;
     if (desiredTouch && touchResponse.lineBarSpots != null) {
-      setState(() {
+      if (mounted) setState(() {
         final sortedLineSpots = List.of(touchResponse.lineBarSpots!);
         sortedLineSpots.sort((spot1, spot2) => spot2.y.compareTo(spot1.y));
 
@@ -100,7 +100,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         _showingTouchedTooltips.add(ShowingTooltipIndicators(sortedLineSpots));
       });
     } else {
-      setState(() {
+      if (mounted) setState(() {
         _showingTouchedTooltips.clear();
         _showingTouchedIndicators.clear();
       });
